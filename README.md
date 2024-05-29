@@ -1,2 +1,3 @@
-# p5ts-template
-A minimal template for creating one off p5.js sketches that employ TypeScript.
+# Creative Coding
+
+A repository for creative coding attempts using p5js and typescript. 
