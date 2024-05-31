@@ -6,8 +6,6 @@ export const sketch = (p: p5) => {
     p.setup = () => {
         p.createCanvas(640, 480);
         grid = new Grid();
-        grid.addRow(new Row());
-        grid.addPreviousRow();
     }
 
     p.draw = () => {
@@ -16,30 +14,28 @@ export const sketch = (p: p5) => {
     }
 
     class Grid {
-        row: Row[];
-        width: number;
-        height: number;
+        rows: Row[];
         m_width: number;
         p: p5;
+        ruleset: Ruleset;
 
         constructor() {
-            this.row = [];
-            this.width = p.width;
-            this.height = p.height;
-            this.m_width = this.width / 12;
+            this.ruleset = new Ruleset();
+            this.rows = [];
+            this.addRow();
+            this.addRow();
+            this.m_width = p.width / 12;
         }
 
-        addRow(row: Row) {
-            this.row.push(row);
-        }
-
-        addPreviousRow() {
-            this.row.push(new Row(this.row[0].molecules));
+        addRow() {
+            let prevRow = this.rows.at(-1)
+            let newRow = new Row(this.ruleset, prevRow)
+            this.rows.push(newRow);
         }
 
         display() {
-            for (let y = 0; y < this.row.length; y++) {
-                const r = this.row[y];
+            for (let y = 0; y < this.rows.length; y++) {
+                const r = this.rows[y];
                 for (let x = 0; x < r.molecules.length; x++) {
                     const m = r.molecules[x];
                     if (m.beloved) {
@@ -48,6 +44,7 @@ export const sketch = (p: p5) => {
                         p.fill(255);
                     }
                     p.rect(x * this.m_width, y * this.m_width, this.m_width, this.m_width);
+                    console.log("x:", x, "y:", y)
                 }
             }
         }
@@ -57,11 +54,10 @@ export const sketch = (p: p5) => {
     class Row {
         LENGTH: number = 12;
         molecules: Molecule[];
-        ruleset: Ruleset;
+        [rowidx: number]: Molecule | undefined;
         
-        constructor(previous: Molecule[] = []) {
-            this.ruleset = new Ruleset();
-            if (previous.length === 0) {
+        constructor(ruleset: Ruleset, previous: Row) {
+            if (previous === undefined) {
                 this.molecules = [];
                 for (let i = 0; i < this.LENGTH; i++) {
                     this.molecules.push(new Molecule(p.random([true, false])));
@@ -69,11 +65,17 @@ export const sketch = (p: p5) => {
             } else {
                 this.molecules = [];
                 for (let i = 0; i < this.LENGTH; i++) {
-                    const left = previous[];
-                    const above;
-                    const right;
+                    const left = i > 0 ? previous[i - 1] : previous[this.LENGTH];
+                    console.log(left)
+                    const above = previous[i];
+                    const right = i < this.LENGTH - 2 ? previous[i + 1] : previous[0];
+                    let rulesetIdx = 
+                        (left ? 4 : 0) +
+                        (above ? 2 : 0) +
+                        (right ? 1 : 0);
+                    let newMolecule = new Molecule(ruleset[rulesetIdx]);
+                    this.molecules.push(newMolecule);
                 }
-                
             }
         }
     }
@@ -88,6 +90,8 @@ export const sketch = (p: p5) => {
 
     class Ruleset {
         rules: boolean[];
+        [rowidx: number]: boolean | undefined;
+
 
         constructor() {
             this.rules = [];
